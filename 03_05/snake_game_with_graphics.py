@@ -14,6 +14,16 @@ MIN_DELAY = 45     # Fastest allowed speed (milliseconds)
 SPEED_STEP = 12    # How much faster each level becomes (milliseconds)
 
 LEVEL_THRESHOLDS = [5, 10, 15, 20, 25, 30, 35]
+LEVEL_BACKGROUNDS = {
+    1: "bg1.gif",
+    2: "bg2.gif",
+    3: "bg3.gif",
+    4: "bg4.gif",
+    5: "bg5.gif",
+    6: "bg6.gif",
+    7: "bg7.gif",
+    8: "bg8.gif",
+}
 FOOD_SIZE = 32
 SNAKE_SIZE = 20
 
@@ -66,6 +76,25 @@ def get_level():
     return level
 
 
+def set_background_for_level(level):
+    background_file = LEVEL_BACKGROUNDS.get(level, "bg1.gif")
+    background_path = os.path.join(ASSETS_DIR, background_file)
+    # If the requested background file doesn't exist, fall back to bg2.gif if available.
+    if not os.path.exists(background_path):
+        fallback = os.path.join(ASSETS_DIR, "bg2.gif")
+        if os.path.exists(fallback):
+            background_path = fallback
+        else:
+            # Nothing to do if no background files are available
+            return
+
+    try:
+        screen.bgpic(background_path)
+    except Exception:
+        # If setting the background fails for any reason, ignore it so the game can continue.
+        return
+
+
 def get_current_delay():
     level = get_level()
     delay = START_DELAY - ((level - 1) * SPEED_STEP)
@@ -94,6 +123,9 @@ def show_level_up(new_level):
     game_running = False
     waiting_for_level_continue = True
     can_continue_after_level = False
+    # Change background for the new level and show level UI
+    set_background_for_level(new_level)
+
     clear_button()
     message.clear()
 
@@ -118,10 +150,11 @@ def show_level_up(new_level):
         font=("Arial", 18, "normal")
     )
 
-    screen.update()
+    # Show CONTINUE immediately and allow continue
+    draw_button("CONTINUE")
+    can_continue_after_level = True
 
-    # Wait 1 second before showing the continue button
-    turtle.ontimer(lambda: enable_level_continue(new_level), 1000)
+    screen.update()
 
 
 def enable_level_continue(new_level):
@@ -279,6 +312,7 @@ def start_game():
     stamper.clearstamps()
 
     score = 0
+    set_background_for_level(1)
 
     snake = [
         [0, 0],
@@ -429,7 +463,7 @@ def get_distance(pos1, pos2):
 screen = turtle.Screen()
 screen.setup(WIDTH, HEIGHT)
 screen.title("Snake")
-screen.bgpic(os.path.join(ASSETS_DIR, "bg2.gif"))
+set_background_for_level(1)
 screen.register_shape(os.path.join(ASSETS_DIR, "snake-food-32x32.gif"))
 screen.register_shape(os.path.join(ASSETS_DIR, "snake-head-20x20.gif"))
 
