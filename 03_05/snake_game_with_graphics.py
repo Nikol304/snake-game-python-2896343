@@ -41,8 +41,8 @@ food_pos = (0, 0)
 BODY_COLORS = [
    
     "#009ef1",
-    "#e91e63",
     "#ffeb3b",
+    "#e91e63",
     "#ff9800",
     "#00c853"
     
