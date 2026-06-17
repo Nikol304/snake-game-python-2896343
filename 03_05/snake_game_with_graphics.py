@@ -33,6 +33,16 @@ snake = []
 snake_direction = "up"
 food_pos = (0, 0)
 
+# Body colours for snake segments (will repeat)
+BODY_COLORS = [
+    "#e91e63",
+    "#009ef1",
+    "#00c853",
+    "#ffeb3b",
+    "#ff9800",
+    
+]
+
 
 def update_high_score():
     global high_score
@@ -219,9 +229,13 @@ def game_loop():
     stamper.goto(snake[-1][0], snake[-1][1])
     stamper.stamp()
 
-    # Draw snake body
+    # Draw snake body with changing colours
     stamper.shape("circle")
-    for segment in snake[:-1]:
+
+    for index, segment in enumerate(snake[:-1]):
+        color = BODY_COLORS[index % len(BODY_COLORS)]
+
+        stamper.color(color)
         stamper.goto(segment[0], segment[1])
         stamper.stamp()
 
@@ -277,6 +291,7 @@ screen.title("Snake")
 screen.bgpic("assets/bg2.gif")
 screen.register_shape("assets/snake-food-32x32.gif")
 screen.register_shape("assets/snake-head-20x20.gif")
+
 screen.tracer(0)
 
 # Event handlers
