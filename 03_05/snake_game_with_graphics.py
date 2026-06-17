@@ -1,6 +1,10 @@
 # Import the Turtle Graphics and random modules
 import turtle
 import random
+import os
+
+# Assets directory (absolute) so running from different cwd/debuggers still works
+ASSETS_DIR = os.path.join(os.path.dirname(__file__), "assets")
 
 # Define program constants
 WIDTH = 800
@@ -35,11 +39,12 @@ food_pos = (0, 0)
 
 # Body colours for snake segments (will repeat)
 BODY_COLORS = [
-    "#e91e63",
+   
     "#009ef1",
-    "#00c853",
+    "#e91e63",
     "#ffeb3b",
     "#ff9800",
+    "#00c853"
     
 ]
 
@@ -225,7 +230,7 @@ def game_loop():
         snake.pop(0)
 
     # Draw snake head
-    stamper.shape("assets/snake-head-20x20.gif")
+    stamper.shape(os.path.join(ASSETS_DIR, "snake-head-20x20.gif"))
     stamper.goto(snake[-1][0], snake[-1][1])
     stamper.stamp()
 
@@ -288,9 +293,9 @@ def get_distance(pos1, pos2):
 screen = turtle.Screen()
 screen.setup(WIDTH, HEIGHT)
 screen.title("Snake")
-screen.bgpic("assets/bg2.gif")
-screen.register_shape("assets/snake-food-32x32.gif")
-screen.register_shape("assets/snake-head-20x20.gif")
+screen.bgpic(os.path.join(ASSETS_DIR, "bg2.gif"))
+screen.register_shape(os.path.join(ASSETS_DIR, "snake-food-32x32.gif"))
+screen.register_shape(os.path.join(ASSETS_DIR, "snake-head-20x20.gif"))
 
 screen.tracer(0)
 
@@ -308,7 +313,7 @@ stamper.hideturtle()
 
 # Food
 food = turtle.Turtle()
-food.shape("assets/snake-food-32x32.gif")
+food.shape(os.path.join(ASSETS_DIR, "snake-food-32x32.gif"))
 food.shapesize(FOOD_SIZE / 20)
 food.penup()
 food.hideturtle()
@@ -324,8 +329,15 @@ button = turtle.Turtle()
 button.hideturtle()
 button.speed(0)
 
-# Show start screen first
-show_start_screen()
+# Show start screen first and run; wrap in try/except to surface errors in debuggers
+try:
+    show_start_screen()
+    # Finish nicely
+    turtle.done()
+except Exception:
+    # Print full traceback to the console (useful when running under a debugger)
+    import traceback, sys
 
-# Finish nicely
-turtle.done()
+    traceback.print_exc()
+    # Re-raise so the process exit code remains non-zero for the debugger
+    raise
