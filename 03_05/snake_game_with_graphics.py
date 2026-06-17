@@ -9,7 +9,11 @@ ASSETS_DIR = os.path.join(os.path.dirname(__file__), "assets")
 # Define program constants
 WIDTH = 800
 HEIGHT = 600
-DELAY = 75  # Milliseconds
+START_DELAY = 130  # Slower at the start (milliseconds)
+MIN_DELAY = 45     # Fastest allowed speed (milliseconds)
+SPEED_STEP = 12    # How much faster each level becomes (milliseconds)
+
+LEVEL_THRESHOLDS = [5, 10, 15, 20, 25, 30, 35]
 FOOD_SIZE = 32
 SNAKE_SIZE = 20
 
@@ -32,6 +36,9 @@ except FileNotFoundError:
 
 # Game state
 game_running = False
+waiting_for_level_continue = False
+can_continue_after_level = False
+
 score = 0
 snake = []
 snake_direction = "up"
@@ -47,6 +54,102 @@ BODY_COLORS = [
     "#00c853"
     
 ]
+
+
+def get_level():
+    level = 1
+
+    for threshold in LEVEL_THRESHOLDS:
+        if score >= threshold:
+            level += 1
+
+    return level
+
+
+def get_current_delay():
+    level = get_level()
+    delay = START_DELAY - ((level - 1) * SPEED_STEP)
+
+    return max(delay, MIN_DELAY)
+
+
+def get_progress_to_next_level():
+    previous_threshold = 0
+
+    for threshold in LEVEL_THRESHOLDS:
+        if score < threshold:
+            apples_collected_this_level = score - previous_threshold
+            apples_needed_this_level = threshold - previous_threshold
+
+            return f"{apples_collected_this_level}/{apples_needed_this_level}"
+
+        previous_threshold = threshold
+
+    return "MAX"
+
+
+def show_level_up(new_level):
+    global game_running, waiting_for_level_continue, can_continue_after_level
+
+    game_running = False
+    waiting_for_level_continue = True
+    can_continue_after_level = False
+    clear_button()
+    message.clear()
+
+    message.goto(0, 115)
+    message.write(
+        f"LEVEL {new_level}!",
+        align="center",
+        font=("Arial", 42, "bold")
+    )
+
+    message.goto(0, 65)
+    message.write(
+        "Speed increased!",
+        align="center",
+        font=("Arial", 22, "bold")
+    )
+
+    message.goto(0, 30)
+    message.write(
+        "Get ready for the next challenge...",
+        align="center",
+        font=("Arial", 18, "normal")
+    )
+
+    screen.update()
+
+    # Wait 1 second before showing the continue button
+    turtle.ontimer(lambda: enable_level_continue(new_level), 1000)
+
+
+def enable_level_continue(new_level):
+    global can_continue_after_level
+
+    if not waiting_for_level_continue:
+        return
+
+    can_continue_after_level = True
+    # Only show the continue button, no extra text
+    draw_button("CONTINUE")
+    screen.update()
+
+
+def continue_after_level():
+    global game_running, waiting_for_level_continue, can_continue_after_level
+
+    if not can_continue_after_level:
+        return
+
+    waiting_for_level_continue = False
+    can_continue_after_level = False
+    game_running = True
+
+    message.clear()
+    clear_button()
+
+    game_loop()
 
 
 def update_high_score():
@@ -164,9 +267,12 @@ def show_game_over():
 
 
 def start_game():
-    global game_running, score, snake, snake_direction, food_pos
+    global game_running, waiting_for_level_continue, can_continue_after_level
+    global score, snake, snake_direction, food_pos
 
     game_running = True
+    waiting_for_level_continue = False
+    can_continue_after_level = False
 
     message.clear()
     clear_button()
@@ -191,6 +297,12 @@ def start_game():
 
 
 def mouse_click(x, y):
+    # If the game is paused because a new level was reached
+    if waiting_for_level_continue:
+        if can_continue_after_level:
+            continue_after_level()
+        return
+
     # Button area:
     # x between -100 and 100
     # y between -60 and 0
@@ -226,8 +338,15 @@ def game_loop():
     snake.append(new_head)
 
     # Check food collision
-    if not food_collision():
+    ate_food = food_collision()
+
+    if not ate_food:
         snake.pop(0)
+
+    # If a new level was reached, stop this frame here.
+    # This prevents the snake from being drawn over the level-up message.
+    if waiting_for_level_continue:
+        return
 
     # Draw snake head
     stamper.shape(os.path.join(ASSETS_DIR, "snake-head-20x20.gif"))
@@ -245,22 +364,39 @@ def game_loop():
         stamper.stamp()
 
     # Refresh screen
-    screen.title(f"Snake Game. Score: {score} High Score: {high_score}")
+    screen.title(
+        f"Snake Game. "
+        f"Score: {score}  "
+        f"High Score: {high_score}  "
+        f"Level: {get_level()}  "
+        f"Next Level: {get_progress_to_next_level()}"
+    )
+
     screen.update()
 
-    # Repeat game loop
-    turtle.ontimer(game_loop, DELAY)
+    # Repeat game loop with current level speed
+    # Only continue automatically if the game is still running
+    if game_running:
+        turtle.ontimer(game_loop, get_current_delay())
 
 
 def food_collision():
     global food_pos, score
 
     if get_distance(snake[-1], food_pos) < 20:
+        old_level = get_level()
+
         score += 1
         update_high_score()
 
+        new_level = get_level()
+
         food_pos = get_random_food_pos()
         food.goto(food_pos)
+
+        # Pause only when the player reaches a new level
+        if new_level > old_level:
+            show_level_up(new_level)
 
         return True
 
