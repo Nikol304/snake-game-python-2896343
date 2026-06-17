@@ -123,8 +123,12 @@ def show_level_up(new_level):
     game_running = False
     waiting_for_level_continue = True
     can_continue_after_level = False
-    # Change background for the new level and show level UI
+    # Change background for the new level
     set_background_for_level(new_level)
+
+    # Redraw the snake so the player can see its position while paused
+    stamper.clearstamps()
+    draw_snake()
 
     clear_button()
     message.clear()
@@ -343,6 +347,23 @@ def mouse_click(x, y):
     if -100 <= x <= 100 and -60 <= y <= 0:
         if not game_running:
             start_game()
+
+
+def draw_snake():
+    # Draw snake head
+    stamper.shape(os.path.join(ASSETS_DIR, "snake-head-20x20.gif"))
+    stamper.goto(snake[-1][0], snake[-1][1])
+    stamper.stamp()
+
+    # Draw snake body with changing colours
+    stamper.shape("circle")
+
+    for index, segment in enumerate(snake[:-1]):
+        color = BODY_COLORS[index % len(BODY_COLORS)]
+
+        stamper.color(color)
+        stamper.goto(segment[0], segment[1])
+        stamper.stamp()
 
 
 def game_loop():
