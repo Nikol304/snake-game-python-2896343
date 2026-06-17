@@ -15,14 +15,14 @@ SPEED_STEP = 12    # How much faster each level becomes (milliseconds)
 
 LEVEL_THRESHOLDS = [5, 10, 15, 20, 25, 30, 35]
 LEVEL_BACKGROUNDS = {
-    1: "bg1.gif",
-    2: "bg2.gif",
-    3: "bg3.gif",
-    4: "bg4.gif",
-    5: "bg5.gif",
-    6: "bg6.gif",
-    7: "bg7.gif",
-    8: "bg8.gif",
+    1: "bg2.gif",
+    2: "bg3.png",
+    3: "bg4.png",
+    4: "bg5.png",
+    5: "bg6.png",
+    6: "bg7.png",
+    7: "bg8.png",
+    8: "bg9.png",
 }
 FOOD_SIZE = 32
 SNAKE_SIZE = 20
